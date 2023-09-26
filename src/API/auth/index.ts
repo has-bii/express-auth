@@ -1,9 +1,10 @@
 import express from "express"
-import { register } from "../../controllers/auth"
+import AuthController from "../../controllers/auth"
 
 const authAPI = express.Router()
 
 // Register
-authAPI.post("/register", register)
+authAPI.post("/register", AuthController.register)
+authAPI.post("/login", AuthController.login)
 
 export default authAPI

@@ -1,9 +1,9 @@
 import express from "express"
-import { getAllUsers } from "../../controllers/user"
+import UsersController from "../../controllers/user"
 
 const userAPI = express.Router()
 
 // Fetch all Users
-userAPI.get("/", getAllUsers)
+userAPI.get("/", UsersController.getAllUsers)
 
 export default userAPI
