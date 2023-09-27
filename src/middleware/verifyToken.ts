@@ -31,8 +31,15 @@ class Middleware {
                 where: { userId: user.id, token: req.cookies.user_access },
             })
 
-            // Validate Token
+            // Compare token
+            if (token?.token !== req.cookies.user_access) {
+                res.status(400).json({ message: "Token is either invalid or expired" })
+                return
+            }
+
+            // Check token
             if (!token || token.expire < new Date()) {
+                // Validate Token
                 res.status(400).json({ message: "Token is either invalid or expired" })
                 return
             }
