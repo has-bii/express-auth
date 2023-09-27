@@ -43,20 +43,19 @@ class AuthController {
             }
 
             // Create user
-            const data = await USER.create({
+            await USER.create({
                 data: {
                     name: user.name,
                     email: user.email,
                     password: bcrypt.hashSync(user.password, salt),
                 },
+            }).catch((error) => {
+                throw new Error(`Failed to create new user\nError: ${error}`)
             })
 
-            res.status(200).json({
-                message: "User has been created.",
-                data: { id: data.id, name: data.name, email: data.email },
-            })
+            res.status(201).json({ message: "User has been created." })
         } catch (error) {
-            res.status(400).json({
+            res.status(500).json({
                 message: "Failed to register new user!",
             })
 

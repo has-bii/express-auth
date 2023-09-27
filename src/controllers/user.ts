@@ -10,7 +10,7 @@ class UsersController {
             const user: IUser = req.body.user
 
             if (user.role === "USER") {
-                res.status(500).json({ message: "Permission denied!" })
+                res.status(403).json({ message: "Permission denied!" })
                 return
             }
 
