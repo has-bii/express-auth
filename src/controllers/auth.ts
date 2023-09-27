@@ -13,6 +13,13 @@ interface IUserRegister extends IUser {
     name: string
 }
 
+interface ITokenOpt {
+    secure: boolean
+    sameSite: boolean
+    httpOnly: boolean
+    expires?: Date
+}
+
 const salt = bcrypt.genSaltSync(10)
 
 const USER = prisma.user
@@ -67,13 +74,16 @@ class AuthController {
                 return
             }
 
+            // Find user from database
             const data = await USER.findUnique({ where: { email: user.email } })
 
+            // Return response
             if (data === null) {
                 res.status(401).json({ message: "User does not exist!" })
                 return
             }
 
+            // Check Password
             const checkPW = bcrypt.compareSync(user.password, data.password)
 
             if (!checkPW) {
@@ -81,15 +91,27 @@ class AuthController {
                 return
             }
 
+            // Create token
             const token = jwt.sign(
                 { id: data.id, name: data.name, email: data.email, role: data.role },
                 env.SECRET_KEY,
                 { algorithm: "HS256" }
             )
 
+            // Create Token Option
+            const tokenOpt: ITokenOpt = {
+                secure: true,
+                sameSite: true,
+                httpOnly: true,
+            }
+
+            // Add expire to the token
+            if (req.body.save === "true") tokenOpt.expires = new Date(Date.now() + 7 * 86400000)
+
+            // Return response
             if (token) {
                 res.status(200)
-                    .cookie("user_access", token, { secure: true, sameSite: true })
+                    .cookie("user_access", token, tokenOpt)
                     .json({ message: "Login successful", token })
             } else {
                 res.status(500).json({ message: "Failed to create token" })
