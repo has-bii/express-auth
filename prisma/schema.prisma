@@ -25,5 +25,14 @@ model User {
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt  DateTime? @map("updated_at") @db.Timestamptz()
 
-  @@map("user")
+  @@map("users")
+}
+
+model Token {
+  id     Int      @id @default(autoincrement())
+  userId Int      @unique @map("user_id")
+  token  String   @db.VarChar(255)
+  expire DateTime @db.Timestamptz()
+
+  @@map("tokens")
 }

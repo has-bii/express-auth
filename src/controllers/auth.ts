@@ -4,16 +4,16 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { env } from "../lib/env"
 
-interface IUser {
+interface IUserReq {
     email: string
     password: string
 }
 
-interface IUserRegister extends IUser {
+interface IUserRegister extends IUserReq {
     name: string
 }
 
-interface ITokenOpt {
+interface ICookieOptions {
     secure: boolean
     sameSite: boolean
     httpOnly: boolean
@@ -23,6 +23,7 @@ interface ITokenOpt {
 const salt = bcrypt.genSaltSync(10)
 
 const USER = prisma.user
+const TOKEN = prisma.token
 
 class AuthController {
     static async register(req: Request, res: Response) {
@@ -65,7 +66,7 @@ class AuthController {
 
     static async login(req: Request, res: Response) {
         try {
-            const user: IUser = req.body
+            const user: IUserReq = req.body
 
             // if email or password empty
             if (!user.email || !user.password) {
@@ -92,26 +93,43 @@ class AuthController {
 
             // Create token
             const token = jwt.sign(
-                { id: data.id, name: data.name, email: data.email, role: data.role },
+                { id: data.id, name: data.name, email: data.email },
                 env.SECRET_KEY,
                 { algorithm: "HS256" }
             )
 
             // Create Token Option
-            const tokenOpt: ITokenOpt = {
+            const cookieOptions: ICookieOptions = {
                 secure: true,
                 sameSite: true,
                 httpOnly: true,
             }
 
             // Add expire to the token
-            if (req.body.save === "true") tokenOpt.expires = new Date(Date.now() + 7 * 86400000)
+            if (req.body.save === "true")
+                cookieOptions.expires = new Date(Date.now() + 7 * 86400000)
+
+            // Create or Update Token in DB
+            await prisma.token.upsert({
+                where: {
+                    userId: data.id,
+                },
+                create: {
+                    userId: data.id,
+                    token: token,
+                    expire: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
+                },
+                update: {
+                    token: token,
+                    expire: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
+                },
+            })
 
             // Return response
             if (token) {
                 res.status(200)
-                    .cookie("user_access", token, tokenOpt)
-                    .json({ message: "Login successful", token })
+                    .cookie("user_access", token, cookieOptions)
+                    .json({ message: "Login successful" })
             } else {
                 res.status(500).json({ message: "Failed to create token" })
             }
